@@ -15,6 +15,16 @@ impl GameRecord {
     fn is_possible(&self, test_condition: &Subset) -> bool {
         self.subsets.iter().all(|x| x.is_possible(test_condition))
     }
+
+    fn minimum_set(&self) -> Subset {
+        let mut retval = Subset::default();
+        for subset in &self.subsets {
+            retval.blue = retval.blue.max(subset.blue);
+            retval.red = retval.red.max(subset.red);
+            retval.green = retval.green.max(subset.green);
+        }
+        retval
+    }
 }
 
 impl Subset {
@@ -22,6 +32,10 @@ impl Subset {
         self.blue <= test_condition.blue
             && self.red <= test_condition.red
             && self.green <= test_condition.green
+    }
+
+    fn power(&self) -> u32 {
+        self.blue * self.red * self.green
     }
 }
 
@@ -99,6 +113,24 @@ fn part1() {
     assert_eq!(Some(sum), expected_sum);
 }
 
+fn part2() {
+    // let (input, expected_sum) = (include_str!("sample1.txt"), Some(2286));
+    let (input, expected_sum) = (include_str!("my_input.txt"), Some(84538));
+    let input = input.lines().map(parse_line).collect::<Vec<_>>();
+
+    let sum: u32 = input
+        .iter()
+        .map(|x| x.minimum_set())
+        .map(|x| x.power())
+        .sum();
+
+    println!("part 2 sum: {sum}");
+    if expected_sum.is_some() {
+        assert_eq!(sum, expected_sum.unwrap());
+    }
+}
+
 fn main() {
     part1();
+    part2();
 }
