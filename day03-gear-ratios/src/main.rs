@@ -93,7 +93,6 @@ fn is_adjacent_to_symbol(schematic: &Vec<Vec<char>>, row: usize, col: usize) -> 
     }
 
     let mut direction = Direction::N;
-
     while direction != Direction::None {
         let (row_offset, col_offset) = direction.offset();
         let neighbor_row = row as i32 + row_offset;
@@ -118,7 +117,6 @@ fn find_adjacent_gear_symbol(
     }
 
     let mut direction = Direction::N;
-
     while direction != Direction::None {
         let (row_offset, col_offset) = direction.offset();
         let neighbor_row = (row as i32 + row_offset) as usize;
@@ -135,7 +133,6 @@ fn find_adjacent_gear_symbol(
 
 fn find_part_numbers(schematic: &Vec<Vec<char>>) -> Vec<u32> {
     let mut retval = Vec::new();
-
     let mut buf = String::new();
     let mut is_part_number = false;
 
@@ -173,13 +170,11 @@ fn part1() {
 
 fn find_gear_part_nums(schematic: &Vec<Vec<char>>) -> Vec<(u32, u32)> {
     let mut retval = Vec::new();
-
     let mut gear_loc_to_part_nums = HashMap::<(usize, usize), Vec<_>>::new();
-
     let mut buf = String::new();
     let mut is_part_number = false;
-
     let mut gear_locs = HashSet::new();
+
     for row in 0..schematic.len() {
         for col in 0..schematic[row].len() {
             let cur_char = schematic[row][col];
