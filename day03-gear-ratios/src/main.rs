@@ -1,4 +1,7 @@
-use std::iter::once;
+use std::{
+    collections::{HashMap, HashSet},
+    iter::once,
+};
 
 fn read_schematic(input: &str) -> Vec<Vec<char>> {
     let mut retval = Vec::new();
@@ -105,6 +108,31 @@ fn is_adjacent_to_symbol(schematic: &Vec<Vec<char>>, row: usize, col: usize) -> 
     false
 }
 
+fn find_adjacent_gear_symbol(
+    schematic: &Vec<Vec<char>>,
+    row: usize,
+    col: usize,
+) -> Option<(usize, usize)> {
+    fn is_gear_symbol(c: char) -> bool {
+        c == '*'
+    }
+
+    let mut direction = Direction::N;
+
+    while direction != Direction::None {
+        let (row_offset, col_offset) = direction.offset();
+        let neighbor_row = (row as i32 + row_offset) as usize;
+        let neighbor_col = (col as i32 + col_offset) as usize;
+
+        if is_gear_symbol(schematic[neighbor_row][neighbor_col]) {
+            return Some((neighbor_row, neighbor_col));
+        }
+
+        direction = direction.next();
+    }
+    None
+}
+
 fn find_part_numbers(schematic: &Vec<Vec<char>>) -> Vec<u32> {
     let mut retval = Vec::new();
 
@@ -143,6 +171,70 @@ fn part1() {
     }
 }
 
+fn find_gear_part_nums(schematic: &Vec<Vec<char>>) -> Vec<(u32, u32)> {
+    let mut retval = Vec::new();
+
+    let mut gear_loc_to_part_nums = HashMap::<(usize, usize), Vec<_>>::new();
+
+    let mut buf = String::new();
+    let mut is_part_number = false;
+
+    let mut gear_locs = HashSet::new();
+    for row in 0..schematic.len() {
+        for col in 0..schematic[row].len() {
+            let cur_char = schematic[row][col];
+            if cur_char.is_ascii_digit() {
+                buf.push(schematic[row][col]);
+                is_part_number |= is_adjacent_to_symbol(schematic, row, col);
+                if let Some(gear_loc) = find_adjacent_gear_symbol(schematic, row, col) {
+                    gear_locs.insert(gear_loc);
+                }
+            } else {
+                // we are at the end of a number.
+                // if it's a gear, we'll add it to the list
+                // and then go looking for the next number
+                if is_part_number && !gear_locs.is_empty() {
+                    let part_num = buf.parse::<u32>().unwrap();
+                    gear_locs.iter().for_each(|loc| {
+                        gear_loc_to_part_nums
+                            .entry(*loc)
+                            .or_default()
+                            .push(part_num);
+                    });
+                }
+                buf.clear();
+                gear_locs.clear();
+                is_part_number = false;
+            }
+        }
+    }
+    gear_loc_to_part_nums.iter().for_each(|(_, part_nums)| {
+        if part_nums.len() == 2 {
+            retval.push((part_nums[0], part_nums[1]));
+        }
+        if part_nums.len() > 2 {
+            println!("found a gear with more than 2 part nums: {:?}", part_nums);
+        }
+    });
+    retval
+}
+
+fn part2() {
+    // let (input, expected_sum) = (include_str!("sample1.txt"), Some(467835));
+    let (input, expected_sum) = (include_str!("my_input.txt"), Some(82824352));
+    let schematic = read_schematic(input);
+    let gear_part_nums = find_gear_part_nums(&schematic);
+    let gear_ratios = gear_part_nums
+        .iter()
+        .map(|(a, b)| (*a as u64) * (*b as u64));
+    let sum = gear_ratios.sum::<u64>();
+    println!("part 2 sum: {}", sum);
+    if expected_sum.is_some() {
+        assert_eq!(sum, expected_sum.unwrap());
+    }
+}
+
 fn main() {
     part1();
+    part2();
 }
