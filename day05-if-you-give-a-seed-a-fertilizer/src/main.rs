@@ -1,4 +1,4 @@
-use std::{collections::HashMap, iter::once};
+use std::{collections::HashMap, io::Write, iter::once};
 
 #[derive(Debug)]
 struct Mapping {
@@ -17,7 +17,7 @@ impl Mapping {
     }
 
     fn map(&self, src: u64) -> Option<u64> {
-        if src < self.src_start || src > self.src_end {
+        if src < self.src_start || src >= self.src_end {
             None
         } else {
             let delta = src - self.src_start;
@@ -32,7 +32,7 @@ struct Almanac {
     mappings: HashMap<MappingOp, Vec<Mapping>>,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 enum MappingOp {
     None,
     SeedToSoil,
@@ -154,12 +154,57 @@ fn part1() {
         .min()
         .expect("should have found a location");
 
-    println!("lowest location is {}", min);
+    println!("part 1 lowest location is {}", min);
     if let Some(expected_min) = expected_min {
         assert_eq!(min, expected_min);
     }
 }
 
+fn part2() {
+    use rayon::prelude::*;
+
+    // let (text, expected_min) = (include_str!("sample.txt"), Some(46));
+    let (text, expected_min) = (include_str!("my_input.txt"), Some(24261545));
+
+    let almanac = parse_input(text);
+    let seed_ranges = almanac
+        .seeds
+        .par_chunks(2)
+        // .chunks(2)
+        .map(|chunk| (chunk[0], chunk[1]));
+    let all_seeds = seed_ranges.flat_map(|(start, len)| start..start + len);
+
+    let min = all_seeds
+        .map(|seed_num| {
+            // print something regularly so we know it's still working
+            if (seed_num % 10_000_000) == 0 {
+                print!(".");
+                std::io::stdout().flush().unwrap();
+            }
+            let mut cur_mapping_operation = MappingOp::SeedToSoil;
+            let mut cur_src = seed_num;
+            while cur_mapping_operation != MappingOp::None {
+                let mappings = almanac.mappings.get(&cur_mapping_operation).unwrap();
+                let dest = mappings.iter().find_map(|mapping| mapping.map(cur_src));
+                let next_src = dest.unwrap_or(cur_src);
+                cur_mapping_operation = cur_mapping_operation.next();
+                cur_src = next_src;
+            }
+            cur_src
+        })
+        .min();
+
+    println!();
+    println!("part 2 lowest location is {}", min.unwrap());
+    if let Some(expected_min) = expected_min {
+        assert_eq!(min.unwrap(), expected_min);
+    }
+}
+
 fn main() {
     part1();
+    let start_time = std::time::Instant::now();
+    part2();
+    let end_time = std::time::Instant::now();
+    println!("elapsed time: {:?}", end_time - start_time);
 }
