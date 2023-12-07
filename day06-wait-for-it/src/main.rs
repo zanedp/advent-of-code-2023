@@ -16,6 +16,8 @@ fn calc_button_limits(time_limit: u64, distance_record: u64) -> (u64, u64) {
 }
 
 fn part1() {
+    use std::iter::zip;
+
     fn parse_input(input: &str) -> (Vec<u64>, Vec<u64>) {
         fn parse_line(line: &str) -> Vec<u64> {
             line.split(':')
@@ -34,7 +36,7 @@ fn part1() {
     // let (input, expected_prod) = (include_str!("sample.txt"), Some(288_u64));
     let (input, expected_prod) = (include_str!("my_input.txt"), Some(140220_u64));
     let (times, distances) = parse_input(input);
-    let times_and_distances = Iterator::zip(times.iter(), distances.iter());
+    let times_and_distances = zip(times.iter(), distances.iter());
 
     let product = times_and_distances
         .map(|(&t, &d)| calc_button_limits(t, d))
