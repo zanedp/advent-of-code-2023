@@ -15,24 +15,24 @@ fn calc_button_limits(time_limit: u64, distance_record: u64) -> (u64, u64) {
     )
 }
 
-fn parse_input(input: &str) -> (Vec<u64>, Vec<u64>) {
-    fn parse_line(line: &str) -> Vec<u64> {
-        line.split(':')
-            .nth(1)
-            .expect("should have found <header>: <list of integers>")
-            .split_whitespace()
-            .flat_map(|x| x.parse().ok())
-            .collect()
-    }
-    let mut lines = input.lines();
-    let times = parse_line(lines.next().expect("should have found Times:"));
-    let distances = parse_line(lines.next().expect("should have found Distances:"));
-    (times, distances)
-}
-
 fn part1() {
-    // let (input, expected_prod) = (include_str!("sample.txt"), Some(288u64));
-    let (input, expected_prod) = (include_str!("my_input.txt"), None::<u64>);
+    fn parse_input(input: &str) -> (Vec<u64>, Vec<u64>) {
+        fn parse_line(line: &str) -> Vec<u64> {
+            line.split(':')
+                .nth(1)
+                .expect("should have found <header>: <list of integers>")
+                .split_whitespace()
+                .flat_map(|x| x.parse().ok())
+                .collect()
+        }
+        let mut lines = input.lines();
+        let times = parse_line(lines.next().expect("should have found Times:"));
+        let distances = parse_line(lines.next().expect("should have found Distances:"));
+        (times, distances)
+    }
+
+    // let (input, expected_prod) = (include_str!("sample.txt"), Some(288_u64));
+    let (input, expected_prod) = (include_str!("my_input.txt"), Some(140220_u64));
     let (times, distances) = parse_input(input);
     let times_and_distances = Iterator::zip(times.iter(), distances.iter());
 
@@ -47,6 +47,34 @@ fn part1() {
     }
 }
 
+fn part2() {
+    fn parse_input(input: &str) -> (u64, u64) {
+        fn parse_line(line: &str) -> u64 {
+            let (_header, rest) = line
+                .split_once(':')
+                .expect("should have found <header>: <list of integers>");
+            rest.replace(' ', "")
+                .parse()
+                .expect("should have found an integer")
+        }
+        let mut lines = input.lines();
+        let time = parse_line(lines.next().expect("should have found Times:"));
+        let distance = parse_line(lines.next().expect("should have found Distances:"));
+        (time, distance)
+    }
+    // let (input, expected_ways) = (include_str!("sample.txt"), Some(71503_u64));
+    let (input, expected_ways) = (include_str!("my_input.txt"), Some(39570185_u64));
+    let (time, distance) = parse_input(input);
+    let (min, max) = calc_button_limits(time, distance);
+    let num_ways_to_win = max - min + 1;
+
+    println!("Part 2: {}", num_ways_to_win);
+    if let Some(expected_ways) = expected_ways {
+        assert_eq!(expected_ways, num_ways_to_win);
+    }
+}
+
 fn main() {
     part1();
+    part2();
 }
