@@ -9,10 +9,7 @@ fn calc_button_limits(time_limit: u64, distance_record: u64) -> (u64, u64) {
     let time_limit = time_limit as f64;
     let distance_record = distance_record as f64;
     let (min, max) = quadratic_formula(1.0, -time_limit, distance_record);
-    (
-        (min + 0.000001).ceil() as u64,
-        (max - 0.000001).floor() as u64,
-    )
+    ((min + 0.05).ceil() as u64, (max - 0.05).floor() as u64)
 }
 
 fn part1() {
