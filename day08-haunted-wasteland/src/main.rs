@@ -29,7 +29,7 @@ fn parse_input(input: &str) -> (Vec<char>, HashMap<String, (String, String)>) {
 fn part1() {
     // let (input, expected_steps) = (include_str!("sample1-1.txt"), Some(2));
     // let (input, expected_steps) = (include_str!("sample1-2.txt"), Some(6));
-    let (input, expected_steps) = (include_str!("my_input.txt"), None::<u32>);
+    let (input, expected_steps) = (include_str!("my_input.txt"), Some(19637));
     let (instructions, graph) = parse_input(input);
 
     let mut num_steps = 0_u32;
