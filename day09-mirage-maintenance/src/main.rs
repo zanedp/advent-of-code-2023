@@ -20,9 +20,14 @@ fn sequence(history: &[i64]) -> Vec<Vec<i64>> {
     seqs
 }
 
-fn extrapolate(sequence: &[Vec<i64>]) -> i64 {
+fn extrapolate_next(sequence: &[Vec<i64>]) -> i64 {
     let last_elems = sequence.iter().rev().map(|xs| *xs.last().unwrap());
     last_elems.sum()
+}
+
+fn extrapolate_prev(sequence: &[Vec<i64>]) -> i64 {
+    let first_elems = sequence.iter().rev().map(|xs| *xs.first().unwrap());
+    first_elems.fold(0, |acc, elem| elem - acc)
 }
 
 fn part1() {
@@ -32,7 +37,7 @@ fn part1() {
     let history_lines = input.lines().map(parse_line);
     let sum = history_lines
         .map(|history| sequence(&history))
-        .map(|seq| extrapolate(&seq))
+        .map(|seq| extrapolate_next(&seq))
         .sum::<i64>();
     println!("Part 1: {}", sum);
     if let Some(expected_sum) = expected_sum {
@@ -40,6 +45,22 @@ fn part1() {
     }
 }
 
+fn part2() {
+    // let (input, expected_sum) = (include_str!("sample.txt"), Some(2));
+    let (input, expected_sum) = (include_str!("my_input.txt"), Some(903));
+
+    let history_lines = input.lines().map(parse_line);
+    let sum = history_lines
+        .map(|history| sequence(&history))
+        .map(|seq| extrapolate_prev(&seq))
+        .sum::<i64>();
+    println!("Part 2: {}", sum);
+    if let Some(expected_sum) = expected_sum {
+        assert_eq!(expected_sum, sum);
+    }
+}
+
 fn main() {
     part1();
+    part2();
 }
