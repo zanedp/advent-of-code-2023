@@ -10,3 +10,4 @@
   - [Part 1](day07-camel-cards/src/part1.rs)
   - [Part 2](day07-camel-cards/src/part2.rs)
 - [Day 8 - Haunted Wasteland](day08-haunted-wasteland/src/main.rs)
+- [Day 9 - Mirage Maintenance](day09-mirage-maintenance/src/main.rs)
