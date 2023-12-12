@@ -8,7 +8,11 @@ fn parse_input(input: &str) -> (Vec<char>, HashMap<String, (String, String)>) {
     for line in lines {
         let mut parts = line.split(" = ");
         let node_name = parts.next().unwrap();
-        let children = parts.next().unwrap().replace(['(', ')'], "");
+        let children = parts
+            .next()
+            .unwrap()
+            .trim_start_matches('(')
+            .trim_end_matches(')');
         let (left, right) = children.split_once(',').unwrap();
         graph.insert(
             node_name.to_string(),
