@@ -23,12 +23,15 @@ fn add_margin(s: &str) -> String {
     result
 }
 
+#[derive(Clone)]
 struct PipeMaze {
     maze: Vec<Vec<PipeSection>>,
     start: (usize, usize),
 }
 
 impl PipeMaze {
+    /// Returns a new maze with the given location marked with an X
+    #[allow(dead_code)]
     fn with_location(&self, (row, col): (usize, usize)) -> Self {
         let mut new_maze = self.maze.clone();
         new_maze[row][col] = PipeSection::Marker;
@@ -177,6 +180,7 @@ impl PipeSection {
         }
     }
 
+    #[allow(dead_code)]
     fn endpoints(&self) -> impl Iterator<Item = Direction> {
         use Direction::*;
         use PipeSection::*;
@@ -285,8 +289,8 @@ impl std::fmt::Display for PipeSection {
 }
 
 fn part1() {
-    // let (input, expected_steps) = (include_str!("sample1.txt"), Some(4));
-    // let (input, expected_steps) = (include_str!("sample2.txt"), Some(8));
+    // let (input, expected_steps) = (include_str!("sample1a.txt"), Some(4));
+    // let (input, expected_steps) = (include_str!("sample1b.txt"), Some(8));
     let (input, expected_steps) = (include_str!("my_input.txt"), Some(6931));
     let maze: PipeMaze = add_margin(input).parse().unwrap();
     println!("{:#}", maze);
@@ -317,6 +321,68 @@ fn part1() {
     }
 }
 
+/// Calculates the area of a polygon using the trapezoid method of the [Shoelace formula](https://en.wikipedia.org/wiki/Shoelace_formula)
+fn polygon_area_trapezoid(path: &[(usize, usize)]) -> f64 {
+    let signed_area = path
+        .windows(2)
+        .map(|pair| {
+            let (x0, y0) = pair[0];
+            let (x1, y1) = pair[1];
+            let x0 = x0 as f64;
+            let x1 = x1 as f64;
+            let y0 = y0 as f64;
+            let y1 = y1 as f64;
+            (y0 + y1) * (x0 - x1)
+        })
+        .sum::<f64>()
+        / 2.0;
+    signed_area.abs()
+}
+
+fn part2() {
+    // let (input, expected_contained_tiles) = (include_str!("sample2a.txt"), Some(4));
+    // let (input, expected_contained_tiles) = (include_str!("sample2b.txt"), Some(8_usize));
+    // let (input, expected_contained_tiles) = (include_str!("sample2c.txt"), Some(10));
+    let (input, expected_contained_tiles) = (include_str!("my_input.txt"), Some(357));
+    let maze: PipeMaze = add_margin(input).parse().unwrap();
+    println!("{:#}", maze);
+    // travel directions
+    let (mut dir, _) = maze.start_exit_directions();
+
+    // follow the maze, counting the length of the path
+    // for fun, we'll X-out the path as we go.
+    let mut marked_maze = maze.clone();
+    let mut route = Vec::new();
+    route.push(maze.start);
+    marked_maze.maze[maze.start.0][maze.start.1] = PipeSection::Marker;
+    let mut pos = maze.start + dir;
+    while pos != maze.start {
+        route.push(pos);
+        let pipe = maze.pipe_section_at(pos);
+        let next_dir = pipe.exit_direction(dir.flip());
+        marked_maze.maze[pos.0][pos.1] = PipeSection::Marker;
+        pos += next_dir;
+        dir = next_dir;
+    }
+    route.push(maze.start); // to complete the loop, need to return to the start
+
+    // Use Pick's theorem to count the number of tiles inside the polygon.
+    // https://en.wikipedia.org/wiki/Pick%27s_theorem
+    // First we need to total area of the polygon formed by the route of the
+    // pipes (A):
+    let total_area = polygon_area_trapezoid(&route);
+    // The number of segments in the pipe route is the number of boundary points (b)
+    let b = route.len();
+    // i = A - (b/2) + 1
+    let internal_points = (total_area as usize) - (b / 2) + 1;
+
+    println!("part 2 internal points: {}", internal_points);
+    if let Some(expected_tiles) = expected_contained_tiles {
+        assert_eq!(internal_points, expected_tiles);
+    }
+}
+
 fn main() {
     part1();
+    part2();
 }
