@@ -125,9 +125,25 @@ enum PipeSection {
     Ground,
     Start,
     Marker,
+    Inside,
+    Outside,
 }
 
 impl PipeSection {
+    fn from_exit_directions(dir0: Direction, dir1: Direction) -> PipeSection {
+        use Direction::*;
+        use PipeSection::*;
+        match (dir0, dir1) {
+            (North, South) | (South, North) => NS,
+            (East, West) | (West, East) => EW,
+            (North, East) | (East, North) => NE,
+            (North, West) | (West, North) => NW,
+            (South, West) | (West, South) => SW,
+            (South, East) | (East, South) => SE,
+            (_, _) => panic!("Unexpected exit directions: {:?} {:?}", dir0, dir1),
+        }
+    }
+
     fn from_char(c: char) -> PipeSection {
         match c {
             '|' => PipeSection::NS,
@@ -193,9 +209,29 @@ impl PipeSection {
             SE => vec![South, East],
             Ground => vec![],
             Start => vec![],
-            Marker => panic!("Marker has no endpoints"),
+            Marker | Inside | Outside => panic!("{:?} has no endpoints", self),
         }
         .into_iter()
+    }
+
+    fn is_corner(&self) -> bool {
+        use PipeSection::*;
+        matches!(self, NE | NW | SW | SE)
+    }
+
+    fn is_straight(&self) -> bool {
+        use PipeSection::*;
+        matches!(self, NS | EW)
+    }
+
+    fn is_vertical(&self) -> bool {
+        use PipeSection::*;
+        matches!(self, NS)
+    }
+
+    fn is_horizontal(&self) -> bool {
+        use PipeSection::*;
+        matches!(self, EW)
     }
 }
 
@@ -270,6 +306,8 @@ impl std::fmt::Display for PipeSection {
                 Ground => '.',
                 Start => 'S',
                 Marker => 'X',
+                Inside => 'I',
+                Outside => 'O',
             }
         } else {
             match self {
@@ -282,6 +320,8 @@ impl std::fmt::Display for PipeSection {
                 Ground => '.',
                 Start => 'S',
                 Marker => 'X',
+                Inside => 'I',
+                Outside => 'O',
             }
         };
         write!(f, "{}", c)
@@ -293,7 +333,7 @@ fn part1() {
     // let (input, expected_steps) = (include_str!("sample1b.txt"), Some(8));
     let (input, expected_steps) = (include_str!("my_input.txt"), Some(6931));
     let maze: PipeMaze = add_margin(input).parse().unwrap();
-    println!("{:#}", maze);
+
     // travel directions
     let (mut dir0, mut dir1) = maze.start_exit_directions();
     let mut pos0 = maze.start + dir0;
@@ -344,23 +384,29 @@ fn part2() {
     // let (input, expected_contained_tiles) = (include_str!("sample2b.txt"), Some(8_usize));
     // let (input, expected_contained_tiles) = (include_str!("sample2c.txt"), Some(10));
     let (input, expected_contained_tiles) = (include_str!("my_input.txt"), Some(357));
+    // let (input, expected_contained_tiles) = (
+    //     indoc::indoc! {"
+    //         S--7
+    //         |..|
+    //         L--J"},
+    //     Some(2),
+    // );
     let maze: PipeMaze = add_margin(input).parse().unwrap();
-    println!("{:#}", maze);
+
     // travel directions
     let (mut dir, _) = maze.start_exit_directions();
 
-    // follow the maze, counting the length of the path
-    // for fun, we'll X-out the path as we go.
-    let mut marked_maze = maze.clone();
+    // follow the maze, counting the length of the path we'll X-out the path as we go.
+    let mut loop_marked_maze = maze.clone();
     let mut route = Vec::new();
     route.push(maze.start);
-    marked_maze.maze[maze.start.0][maze.start.1] = PipeSection::Marker;
+    loop_marked_maze.maze[maze.start.0][maze.start.1] = PipeSection::Marker;
     let mut pos = maze.start + dir;
     while pos != maze.start {
         route.push(pos);
         let pipe = maze.pipe_section_at(pos);
         let next_dir = pipe.exit_direction(dir.flip());
-        marked_maze.maze[pos.0][pos.1] = PipeSection::Marker;
+        loop_marked_maze.maze[pos.0][pos.1] = PipeSection::Marker;
         pos += next_dir;
         dir = next_dir;
     }
@@ -374,11 +420,108 @@ fn part2() {
     // The number of segments in the pipe route is the number of boundary points (b)
     let b = route.len();
     // i = A - (b/2) + 1
-    let internal_points = (total_area as usize) - (b / 2) + 1;
+    let internal_points_picks = (total_area as usize) - (b / 2) + 1;
 
-    println!("part 2 internal points: {}", internal_points);
+    println!("part 2 internal points pick's: {}", internal_points_picks);
     if let Some(expected_tiles) = expected_contained_tiles {
-        assert_eq!(internal_points, expected_tiles);
+        assert_eq!(internal_points_picks, expected_tiles);
+    }
+
+    // -------------------------------------------------------------------------
+
+    let mut inside_outside_maze = maze.clone();
+    let loop_marked_maze = loop_marked_maze;
+    let (dir0, dir1) = maze.start_exit_directions();
+    let start_tile = PipeSection::from_exit_directions(dir0, dir1);
+    let mut num_internal_tiles_scanned = 0;
+    for (r, row) in maze.maze.iter().enumerate() {
+        use PipeSection::*;
+        let mut inside = false;
+        let mut prev_unmatched_corner = None;
+
+        // scan west to east
+        for (c, tile) in row.iter().enumerate() {
+            let tile = if (r, c) == maze.start {
+                start_tile
+            } else {
+                *tile
+            };
+
+            if loop_marked_maze.pipe_section_at((r, c)) == Marker {
+                if tile.is_vertical() {
+                    inside ^= true;
+                } else if tile.is_corner() {
+                    if let Some(prev_corner) = prev_unmatched_corner {
+                        if do_corners_form_u(prev_corner, tile) {
+                            inside ^= true;
+                        }
+                        prev_unmatched_corner = None;
+                    } else {
+                        inside ^= true;
+                        prev_unmatched_corner = Some(tile);
+                    }
+                }
+            } else if inside {
+                num_internal_tiles_scanned += 1;
+                inside_outside_maze.maze[r][c] = bool_to_pipe_section(inside);
+            }
+        }
+    }
+    println!("scanned map:");
+    println!(
+        "{}",
+        colorize_maze(&maze, &loop_marked_maze, &inside_outside_maze)
+    );
+    println!(
+        "internal tiles using scanlines: {}",
+        num_internal_tiles_scanned
+    );
+    if let Some(expected_contained_tiles) = expected_contained_tiles {
+        assert_eq!(num_internal_tiles_scanned, expected_contained_tiles);
+    }
+}
+
+fn colorize_maze(original: &PipeMaze, marked: &PipeMaze, inside_outside: &PipeMaze) -> String {
+    use inline_colorization::*;
+    let mut result = String::new();
+    for (r, orig_row) in original.maze.iter().enumerate() {
+        for (c, tile) in orig_row.iter().enumerate() {
+            if (r, c) == original.start {
+                result.push_str(color_bright_red);
+                result.push_str(&format!("{:#}", tile));
+                result.push_str(color_reset);
+            } else if marked.pipe_section_at((r, c)) == PipeSection::Marker {
+                result.push_str(color_bright_green);
+                result.push_str(&format!("{:#}", tile));
+                result.push_str(color_reset);
+            } else if inside_outside.pipe_section_at((r, c)) == PipeSection::Inside {
+                result.push_str(color_bright_magenta);
+                result.push_str(bg_cyan);
+                result.push_str(&format!("{:#}", tile));
+                result.push_str(bg_reset);
+                result.push_str(color_reset);
+            } else {
+                result.push_str(&format!("{:#}", tile));
+            }
+        }
+        result.push('\n');
+    }
+    result
+}
+
+fn bool_to_pipe_section(b: bool) -> PipeSection {
+    if b {
+        PipeSection::Inside
+    } else {
+        PipeSection::Outside
+    }
+}
+
+fn do_corners_form_u(left: PipeSection, right: PipeSection) -> bool {
+    use PipeSection::*;
+    match (left, right) {
+        (NE, NW) | (SE, SW) => true,
+        (_, _) => false,
     }
 }
 
