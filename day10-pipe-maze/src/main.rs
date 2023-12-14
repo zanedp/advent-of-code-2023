@@ -497,11 +497,13 @@ fn colorize_maze(original: &PipeMaze, marked: &PipeMaze, inside_outside: &PipeMa
             } else if inside_outside.pipe_section_at((r, c)) == PipeSection::Inside {
                 result.push_str(color_bright_magenta);
                 result.push_str(bg_cyan);
-                result.push_str(&format!("{:#}", tile));
+                // result.push_str(&format!("{:#}", tile));
+                result.push('X');
                 result.push_str(bg_reset);
                 result.push_str(color_reset);
             } else {
-                result.push_str(&format!("{:#}", tile));
+                // result.push_str(&format!("{:#}", tile));
+                result.push('~');
             }
         }
         result.push('\n');
