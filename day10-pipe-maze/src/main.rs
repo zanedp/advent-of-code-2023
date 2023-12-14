@@ -428,7 +428,7 @@ fn part2() {
     }
 
     // -------------------------------------------------------------------------
-
+    // Below is an alternate method of counting the internal tiles by scanning
     let mut inside_outside_maze = maze.clone();
     let loop_marked_maze = loop_marked_maze;
     let (dir0, dir1) = maze.start_exit_directions();
