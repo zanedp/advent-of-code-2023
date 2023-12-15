@@ -379,34 +379,20 @@ fn polygon_area_trapezoid(path: &[(usize, usize)]) -> f64 {
     signed_area.abs()
 }
 
-fn part2() {
-    // let (input, expected_contained_tiles) = (include_str!("sample2a.txt"), Some(4));
-    // let (input, expected_contained_tiles) = (include_str!("sample2b.txt"), Some(8_usize));
-    // let (input, expected_contained_tiles) = (include_str!("sample2c.txt"), Some(10));
-    let (input, expected_contained_tiles) = (include_str!("my_input.txt"), Some(357));
-    // let (input, expected_contained_tiles) = (
-    //     indoc::indoc! {"
-    //         S--7
-    //         |..|
-    //         L--J"},
-    //     Some(2),
-    // );
+fn part2_picks_theorum(input: &str, expected_contained_tiles: Option<usize>) {
     let maze: PipeMaze = add_margin(input).parse().unwrap();
 
     // travel directions
     let (mut dir, _) = maze.start_exit_directions();
 
-    // follow the maze, counting the length of the path we'll X-out the path as we go.
-    let mut loop_marked_maze = maze.clone();
+    // follow the maze, counting the length of the path
     let mut route = Vec::new();
     route.push(maze.start);
-    loop_marked_maze.maze[maze.start.0][maze.start.1] = PipeSection::Marker;
     let mut pos = maze.start + dir;
     while pos != maze.start {
         route.push(pos);
         let pipe = maze.pipe_section_at(pos);
         let next_dir = pipe.exit_direction(dir.flip());
-        loop_marked_maze.maze[pos.0][pos.1] = PipeSection::Marker;
         pos += next_dir;
         dir = next_dir;
     }
@@ -426,9 +412,28 @@ fn part2() {
     if let Some(expected_tiles) = expected_contained_tiles {
         assert_eq!(internal_points_picks, expected_tiles);
     }
+}
 
-    // -------------------------------------------------------------------------
-    // Below is an alternate method of counting the internal tiles by scanning
+/// Count internal tiles by scanning the maze. This also identifies the internal
+/// tiles, rather than just counting them like using Pick's theorem.
+fn part2_scanlines(input: &str, expected_contained_tiles: Option<usize>) {
+    let maze: PipeMaze = add_margin(input).parse().unwrap();
+
+    // Let's mark the path of the pipe we're interested in
+    let (mut dir, _) = maze.start_exit_directions();
+    let mut loop_marked_maze = maze.clone();
+    loop_marked_maze.maze[maze.start.0][maze.start.1] = PipeSection::Marker;
+    let mut pos = maze.start + dir;
+    while pos != maze.start {
+        let pipe = maze.pipe_section_at(pos);
+        let next_dir = pipe.exit_direction(dir.flip());
+        loop_marked_maze.maze[pos.0][pos.1] = PipeSection::Marker;
+        pos += next_dir;
+        dir = next_dir;
+    }
+
+    // Now that we know where our pipe is, we scan each line of the maze,
+    // marking which tiles are contained within our pipe's loop.
     let mut inside_outside_maze = maze.clone();
     let loop_marked_maze = loop_marked_maze;
     let (dir0, dir1) = maze.start_exit_directions();
@@ -529,5 +534,18 @@ fn do_corners_form_u(left: PipeSection, right: PipeSection) -> bool {
 
 fn main() {
     part1();
-    part2();
+
+    // let (input, expected_contained_tiles) = (include_str!("sample2a.txt"), Some(4));
+    // let (input, expected_contained_tiles) = (include_str!("sample2b.txt"), Some(8_usize));
+    // let (input, expected_contained_tiles) = (include_str!("sample2c.txt"), Some(10));
+    let (input, expected_contained_tiles) = (include_str!("my_input.txt"), Some(357));
+    // let (input, expected_contained_tiles) = (
+    //     indoc::indoc! {"
+    //         S--7
+    //         |..|
+    //         L--J"},
+    //     Some(2),
+    // );
+    part2_picks_theorum(input, expected_contained_tiles);
+    part2_scanlines(input, expected_contained_tiles);
 }
