@@ -368,15 +368,15 @@ fn polygon_area_trapezoid(path: &[(usize, usize)]) -> f64 {
         .map(|pair| {
             let (x0, y0) = pair[0];
             let (x1, y1) = pair[1];
-            let x0 = x0 as f64;
-            let x1 = x1 as f64;
-            let y0 = y0 as f64;
-            let y1 = y1 as f64;
+            let x0 = x0 as isize;
+            let x1 = x1 as isize;
+            let y0 = y0 as isize;
+            let y1 = y1 as isize;
             (y0 + y1) * (x0 - x1)
         })
-        .sum::<f64>()
-        / 2.0;
-    signed_area.abs()
+        .sum::<isize>()
+        / 2;
+    signed_area.abs() as f64
 }
 
 fn part2_picks_theorum(input: &str, expected_contained_tiles: Option<usize>) {
@@ -397,16 +397,20 @@ fn part2_picks_theorum(input: &str, expected_contained_tiles: Option<usize>) {
         dir = next_dir;
     }
     route.push(maze.start); // to complete the loop, need to return to the start
+    let route = route;
 
     // Use Pick's theorem to count the number of tiles inside the polygon.
     // https://en.wikipedia.org/wiki/Pick%27s_theorem
     // First we need to total area of the polygon formed by the route of the
-    // pipes (A):
+    // pipes (A). We will use shoelace formula to calculate this.
     let total_area = polygon_area_trapezoid(&route);
     // The number of segments in the pipe route is the number of boundary points (b)
-    let b = route.len();
+    // we added one extra segment to close the loop, so we subtract one
+    let b = route.len() - 1;
     // i = A - (b/2) + 1
-    let internal_points_picks = (total_area as usize) - (b / 2) + 1;
+    #[allow(non_snake_case)]
+    let A = total_area as usize; // we know the area must be an integer because we only have rectangles
+    let internal_points_picks = A - (b / 2) + 1;
 
     println!("part 2 internal points pick's: {}", internal_points_picks);
     if let Some(expected_tiles) = expected_contained_tiles {
