@@ -12,3 +12,4 @@
 - [Day 8 - Haunted Wasteland](day08-haunted-wasteland/src/main.rs)
 - [Day 9 - Mirage Maintenance](day09-mirage-maintenance/src/main.rs)
 - [Day 10 - Pipe Maze](day10-pipe-maze/src/main.rs)
+- [Day 11 - Cosmic Expansion](day11-cosmic-expansion/src/main.rs)
