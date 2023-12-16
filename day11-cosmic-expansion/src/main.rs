@@ -1,18 +1,18 @@
 use std::{collections::HashMap, mem::swap};
 
-fn parse(input: &str) -> Vec<(usize, usize)> {
+fn parse(input: &str) -> Vec<(u64, u64)> {
     let mut cosmos = vec![];
     for (i, line) in input.lines().enumerate() {
         for (j, c) in line.chars().enumerate() {
             if c == '#' {
-                cosmos.push((i + 1, j + 1));
+                cosmos.push((u64::try_from(i + 1).unwrap(), u64::try_from(j + 1).unwrap()));
             }
         }
     }
     cosmos
 }
 
-fn expand(cosmos: &Vec<(usize, usize)>, factor: usize) -> Vec<(usize, usize)> {
+fn expand(cosmos: &Vec<(u64, u64)>, factor: u64) -> Vec<(u64, u64)> {
     let mut fat_cosmos = Vec::with_capacity(cosmos.len());
     let mut previous_row = 1;
     let mut expansion = 0;
@@ -116,9 +116,9 @@ fn test_expand() {
     assert_eq!(expand(&cosmos, 3), parse(expected3), "factor 3");
 }
 
-fn distance(a: (usize, usize), b: (usize, usize)) -> usize {
-    let (x1, y1) = (a.0 as isize, a.1 as isize);
-    let (x2, y2) = (b.0 as isize, b.1 as isize);
+fn distance(a: (u64, u64), b: (u64, u64)) -> u64 {
+    let (x1, y1) = (a.0 as i64, a.1 as i64);
+    let (x2, y2) = (b.0 as i64, b.1 as i64);
 
     ((x1 - x2).abs() + (y1 - y2).abs()).unsigned_abs()
 }
@@ -131,11 +131,11 @@ fn test_distance() {
     assert_eq!(distance((12, 1), (12, 6)), 5); // 8 and 9
 }
 
-fn part1(input: &str) -> usize {
+fn part1(input: &str) -> u64 {
     let cosmos = parse(input);
     let fat_cosmos = expand(&cosmos, 2);
 
-    let mut distances: HashMap<(usize, usize), HashMap<(usize, usize), usize>> = HashMap::new();
+    let mut distances: HashMap<(u64, u64), HashMap<(u64, u64), u64>> = HashMap::new();
     for src in fat_cosmos.iter() {
         for dst in fat_cosmos.iter() {
             if dst == src || distances.contains_key(dst) {
@@ -153,17 +153,17 @@ fn part1(input: &str) -> usize {
 
     let sum_of_shortests = distances
         .values()
-        .map(|dsts| dsts.values().sum::<usize>())
+        .map(|dsts| dsts.values().sum::<u64>())
         .sum();
 
     sum_of_shortests
 }
 
-fn part2(input: &str, expansion_factor: usize) -> usize {
+fn part2(input: &str, expansion_factor: u64) -> u64 {
     let cosmos = parse(input);
     let fat_cosmos = expand(&cosmos, expansion_factor);
 
-    let mut distances: HashMap<(usize, usize), HashMap<(usize, usize), usize>> = HashMap::new();
+    let mut distances: HashMap<(u64, u64), HashMap<(u64, u64), u64>> = HashMap::new();
     for src in fat_cosmos.iter() {
         for dst in fat_cosmos.iter() {
             if dst == src || distances.contains_key(dst) {
@@ -181,14 +181,14 @@ fn part2(input: &str, expansion_factor: usize) -> usize {
 
     let sum_of_shortests = distances
         .values()
-        .map(|dsts| dsts.values().sum::<usize>())
+        .map(|dsts| dsts.values().sum::<u64>())
         .sum();
 
     sum_of_shortests
 }
 
 fn main() {
-    // let (input, expected) = (include_str!("sample1.txt"), Some(374_usize));
+    // let (input, expected) = (include_str!("sample1.txt"), Some(374));
     let (input, expected) = (include_str!("my_input.txt"), Some(9647174));
     let p1_result = part1(input);
     println!("part1: {}", p1_result);
