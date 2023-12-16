@@ -159,6 +159,34 @@ fn part1(input: &str) -> usize {
     sum_of_shortests
 }
 
+fn part2(input: &str, expansion_factor: usize) -> usize {
+    let cosmos = parse(input);
+    let fat_cosmos = expand(&cosmos, expansion_factor);
+
+    let mut distances: HashMap<(usize, usize), HashMap<(usize, usize), usize>> = HashMap::new();
+    for src in fat_cosmos.iter() {
+        for dst in fat_cosmos.iter() {
+            if dst == src || distances.contains_key(dst) {
+                continue;
+            }
+
+            let distance = distance(*src, *dst);
+            distances
+                .entry(*src)
+                .or_default()
+                .entry(*dst)
+                .or_insert(distance);
+        }
+    }
+
+    let sum_of_shortests = distances
+        .values()
+        .map(|dsts| dsts.values().sum::<usize>())
+        .sum();
+
+    sum_of_shortests
+}
+
 fn main() {
     // let (input, expected) = (include_str!("sample1.txt"), Some(374_usize));
     let (input, expected) = (include_str!("my_input.txt"), Some(9647174));
@@ -166,5 +194,14 @@ fn main() {
     println!("part1: {}", p1_result);
     if let Some(expected) = expected {
         assert_eq!(p1_result, expected);
+    }
+
+    // let (input, factor, expected) = (include_str!("sample1.txt"), 10, Some(1030));
+    // let (input, factor, expected) = (include_str!("sample1.txt"), 100, Some(8410));
+    let (input, factor, expected) = (include_str!("my_input.txt"), 1_000_000, Some(377318892554));
+    let p2_result = part2(input, factor);
+    println!("part2: {}", p2_result);
+    if let Some(expected) = expected {
+        assert_eq!(p2_result, expected);
     }
 }
