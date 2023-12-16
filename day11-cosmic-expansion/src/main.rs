@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    mem::swap,
-};
+use std::{collections::HashMap, mem::swap};
 
 fn parse(input: &str) -> Vec<(usize, usize)> {
     let mut cosmos = vec![];
@@ -15,14 +12,14 @@ fn parse(input: &str) -> Vec<(usize, usize)> {
     cosmos
 }
 
-fn expand(cosmos: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
+fn expand(cosmos: &Vec<(usize, usize)>, factor: usize) -> Vec<(usize, usize)> {
     let mut fat_cosmos = Vec::with_capacity(cosmos.len());
     let mut previous_row = 1;
     let mut expansion = 0;
     for (r, c) in cosmos.iter() {
         let distance_from_previous_row = r - previous_row;
         expansion = if distance_from_previous_row > 0 {
-            expansion + distance_from_previous_row - 1
+            expansion + ((distance_from_previous_row - 1) * (factor - 1))
         } else {
             expansion
         };
@@ -43,7 +40,7 @@ fn expand(cosmos: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
     for (r, c) in fat_cosmos.iter_mut() {
         let distance_from_previous_row = *r - previous_row;
         expansion = if distance_from_previous_row > 0 {
-            expansion + distance_from_previous_row - 1
+            expansion + ((distance_from_previous_row - 1) * (factor - 1))
         } else {
             expansion
         };
@@ -63,6 +60,13 @@ fn expand(cosmos: &Vec<(usize, usize)>) -> Vec<(usize, usize)> {
 
 #[test]
 fn test_expand() {
+    let sample1_cosmos = parse(include_str!("sample1.txt"));
+    assert_eq!(
+        sample1_cosmos,
+        expand(&sample1_cosmos, 1),
+        "factor 1 (no-op)"
+    );
+
     let expected = vec![
         (1, 5),
         (2, 10),
@@ -74,8 +78,42 @@ fn test_expand() {
         (12, 1),
         (12, 6),
     ];
-    let result = expand(&parse(include_str!("sample1.txt")));
-    assert_eq!(result, expected);
+    let result = expand(&sample1_cosmos, 2);
+    assert_eq!(result, expected, "factor 2");
+
+    let input = indoc::indoc! {
+        "
+        ##.#
+        ....
+        .#.#
+        "
+    };
+    let cosmos = parse(input);
+    assert_eq!(cosmos, vec![(1, 1), (1, 2), (1, 4), (3, 2), (3, 4)]);
+
+    let expected2 = indoc::indoc! {
+        "
+        ##..#
+        .....
+        .....
+        .#..#
+        "
+    };
+
+    // let expected1: Vec<(usize, usize)> = vec![(1, 1), (1, 3), (1, 6), (4, 3), (4, 6)];
+    assert_eq!(expand(&cosmos, 2), parse(expected2), "factor 2");
+
+    // let expected2 = vec![(1, 4), (1, 8), (5, 2), (5, 4)];
+    let expected3 = indoc::indoc! {
+        "
+        ##...#
+        ......
+        ......
+        ......
+        .#...#
+        "
+    };
+    assert_eq!(expand(&cosmos, 3), parse(expected3), "factor 3");
 }
 
 fn distance(a: (usize, usize), b: (usize, usize)) -> usize {
@@ -95,7 +133,7 @@ fn test_distance() {
 
 fn part1(input: &str) -> usize {
     let cosmos = parse(input);
-    let fat_cosmos = expand(&cosmos);
+    let fat_cosmos = expand(&cosmos, 2);
 
     let mut distances: HashMap<(usize, usize), HashMap<(usize, usize), usize>> = HashMap::new();
     for src in fat_cosmos.iter() {
@@ -123,7 +161,7 @@ fn part1(input: &str) -> usize {
 
 fn main() {
     // let (input, expected) = (include_str!("sample1.txt"), Some(374_usize));
-    let (input, expected) = (include_str!("my_input.txt"), None);
+    let (input, expected) = (include_str!("my_input.txt"), Some(9647174));
     let p1_result = part1(input);
     println!("part1: {}", p1_result);
     if let Some(expected) = expected {
